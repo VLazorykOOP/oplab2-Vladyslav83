@@ -3,10 +3,10 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <atomic>
 
-// Константи
-const double V = 1.0;  // Швидкість мурах
-const double R = 10.0; // Радіус руху мурах-воїнів
+const double V = 1.0;  
+const double R = 10.0; 
 const double PI = 3.14159265358979323846;
 
 // Структура для зберігання координат точки
@@ -77,8 +77,8 @@ public:
     }
 };
 
-void simulate(Ant* ant) {
-    while (true) {
+void simulate(Ant* ant, std::atomic<bool>& running) {
+    while (running) {
         ant->move();
         Point pos = ant->getPosition();
         std::cout << "Ant at (" << pos.x << ", " << pos.y << ")\n";
@@ -96,13 +96,20 @@ int main() {
     // Додавання мурах-воїнів
     ants.push_back(new WarriorAnt(0, 0, V, R));
 
+    // Флаг для зупинки потоків
+    std::atomic<bool> running(true);
+
     // Запуск симуляції в окремих потоках
     std::vector<std::thread> threads;
     for (Ant* ant : ants) {
-        threads.emplace_back(simulate, ant);
+        threads.emplace_back(simulate, ant, std::ref(running));
     }
 
-    // Очікування завершення потоків (хоча цього не станеться, бо у нас нескінченний цикл)
+    // Працюємо протягом 10 секунд
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    running = false;
+
+    // Очікування завершення потоків
     for (std::thread& t : threads) {
         t.join();
     }
