@@ -77,13 +77,11 @@ public:
     }
 };
 
-void simulate(std::vector<Ant*>& ants) {
+void simulate(Ant* ant) {
     while (true) {
-        for (Ant* ant : ants) {
-            ant->move();
-            Point pos = ant->getPosition();
-            std::cout << "Ant at (" << pos.x << ", " << pos.y << ")\n";
-        }
+        ant->move();
+        Point pos = ant->getPosition();
+        std::cout << "Ant at (" << pos.x << ", " << pos.y << ")\n";
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
@@ -98,8 +96,16 @@ int main() {
     // Додавання мурах-воїнів
     ants.push_back(new WarriorAnt(0, 0, V, R));
 
-    // Запуск симуляції
-    simulate(ants);
+    // Запуск симуляції в окремих потоках
+    std::vector<std::thread> threads;
+    for (Ant* ant : ants) {
+        threads.emplace_back(simulate, ant);
+    }
+
+    // Очікування завершення потоків (хоча цього не станеться, бо у нас нескінченний цикл)
+    for (std::thread& t : threads) {
+        t.join();
+    }
 
     // Очищення пам'яті
     for (Ant* ant : ants) {
